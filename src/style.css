@@ -1,36 +1,506 @@
+/**
+ * @file: style.css
+ * @description: Стили для React UI компонентов
+ * @dependencies: Все React компоненты
+ * @created: 2024-12-19
+ */
+
+/* Основные переменные */
 :root {
-  --color-bg: var(--figma-color-bg);
-  --color-bg-hover: var(--figma-color-bg-hover);
-  --color-bg-active: var(--figma-color-bg-pressed);
-  --color-border: var(--figma-color-border);
-  --color-border-focus: var(--figma-color-border-selected);
-  --color-icon: var(--figma-color-icon);
-  --color-text: var(--figma-color-text);
-  --color-bg-brand: var(--figma-color-bg-brand);
-  --color-bg-brand-hover: var(--figma-color-bg-brand-hover);
-  --color-bg-brand-active: var(--figma-color-bg-brand-pressed);
-  --color-border-brand: var(--figma-color-border-brand);
-  --color-border-brand-focus: var(--figma-color-border-selected-strong);
-  --color-text-brand: var(--figma-color-text-onbrand);
+  --color-bg: #ffffff;
+  --color-bg-hover: #f5f5f5;
+  --color-bg-active: #e5e5e5;
+  --color-text: #333333;
+  --color-text-secondary: #666666;
+  --color-border: #e0e0e0;
+  --color-border-focus: #007acc;
+  --color-primary: #007acc;
+  --color-primary-hover: #005a9e;
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-error: #dc3545;
+  --color-bg-brand: var(--color-primary);
+  --color-text-brand: #ffffff;
+  --color-bg-brand-hover: var(--color-primary-hover);
+  --color-bg-brand-active: #004085;
+  --color-border-brand-focus: #005a9e;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --border-radius: 8px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
 }
 
-html,
-body,
-main {
-  height: 100%;
+/* Темная тема */
+[data-theme="dark"] {
+  --color-bg: #2d2d2d;
+  --color-bg-hover: #3d3d3d;
+  --color-bg-active: #4d4d4d;
+  --color-text: #ffffff;
+  --color-text-secondary: #cccccc;
+  --color-border: #404040;
+  --color-border-focus: #007acc;
 }
 
-body,
-input,
-button {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  font-size: 1rem;
-  text-align: center;
+/* Базовые стили */
+* {
+  box-sizing: border-box;
 }
 
 body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   background: var(--color-bg);
   color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* PPTX Importer */
+.pptx-importer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: var(--spacing-md);
+  gap: var(--spacing-md);
+}
+
+.pptx-importer header {
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.pptx-importer h2 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pptx-importer p {
   margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* Drop Zone */
+.drop-zone {
+  flex: 1;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
+.drop-zone:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg-hover);
+}
+
+.drop-zone.drag-over {
+  border-color: var(--color-primary);
+  background: var(--color-bg-hover);
+  transform: scale(1.02);
+}
+
+.drop-content {
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.upload-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+}
+
+.drop-content p {
+  margin: var(--spacing-sm) 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.drop-content .subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-weight: normal;
+}
+
+.file-select-btn {
+  display: inline-block;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.file-select-btn:hover {
+  background: var(--color-primary-hover);
+}
+
+/* File Selected */
+.file-selected {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-hover);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+}
+
+.file-icon {
+  font-size: 32px;
+}
+
+.file-details h3 {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.file-details p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+/* Import Settings */
+.import-settings {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+}
+
+.import-settings h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.settings-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.settings-group h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  cursor: pointer;
+  padding: var(--spacing-xs) 0;
+}
+
+.setting-item input[type="checkbox"],
+.setting-item input[type="radio"] {
+  margin: 0;
+}
+
+.setting-item span {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.size-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.custom-size {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.size-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.size-input label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.size-input input {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 14px;
+  width: 80px;
+}
+
+/* Progress Bar */
+.progress-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.current-step {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.progress-percentage {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--spacing-lg);
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.step.completed {
+  opacity: 1;
+}
+
+.step-icon {
+  font-size: 24px;
+}
+
+.step span {
+  font-size: 12px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+/* Results Panel */
+.results-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.results-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+}
+
+.summary-item.success {
+  background: rgba(40, 167, 69, 0.1);
+  border-color: var(--color-success);
+}
+
+.summary-icon {
+  font-size: 24px;
+}
+
+.summary-content h4 {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.summary-content p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.results-section {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+}
+
+.section-title {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.section-title.warning {
+  color: var(--color-warning);
+}
+
+.section-title.error {
+  color: var(--color-error);
+}
+
+.warnings-list,
+.errors-list {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+}
+
+.warning-item,
+.error-item {
+  margin-bottom: var(--spacing-xs);
+  font-size: 14px;
+}
+
+.warning-item {
+  color: var(--color-warning);
+}
+
+.error-item {
+  color: var(--color-error);
+}
+
+.success-message {
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+.success-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+}
+
+.success-message p {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Buttons */
+footer {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: var(--color-bg-hover);
+}
+
+button:active {
+  background: var(--color-bg-active);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.primary-btn {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.primary-btn:hover {
+  background: var(--color-primary-hover);
+}
+
+.primary-btn:active {
+  background: var(--color-bg-brand-active);
+}
+
+.cancel-btn {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.cancel-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .pptx-importer {
+    padding: var(--spacing-sm);
+  }
+  
+  .progress-steps {
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+  }
+  
+  .step {
+    flex: 1;
+    min-width: 60px;
+  }
 }

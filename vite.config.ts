@@ -1,4 +1,4 @@
-import vue from '@vitejs/plugin-vue'
+import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 import svgLoader from 'vite-svg-loader'
@@ -18,5 +18,9 @@ export default defineConfig({
     },
     target: 'esnext',
   },
-  plugins: [vue(), viteSingleFile(), svgLoader()],
+  plugins: [react(), viteSingleFile(), svgLoader()],
+  worker: {
+    format: 'es',
+    plugins: []
+  }
 })

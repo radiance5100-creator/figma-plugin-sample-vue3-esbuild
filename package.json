@@ -1,33 +1,37 @@
 {
-  "name": "figma-plugin-sample-vue3",
+  "name": "figma-plugin-pptx-import",
   "version": "1.0.0",
-  "description": "",
+  "description": "Figma plugin for importing PowerPoint presentations",
   "scripts": {
     "build": "npm run build:ui && npm run build:plugin -- --minify",
-    "build:plugin": "esbuild plugin/code.ts --bundle --outfile=dist/code.js",
+    "build:plugin": "node esbuild.config.js",
     "build:ui": "npx vite build --minify esbuild --emptyOutDir=false",
     "build:watch": "concurrently -n widget,iframe \"npm run build:plugin -- --watch\" \"npm run build:ui -- --watch\"",
     "dev": "concurrently -n tsc,build,vite 'npm:tsc:watch' 'npm:build:watch' 'vite'",
     "format": "prettier --write ./src ./plugin",
     "test": "npm run tsc && npm run build",
-    "tsc": "vue-tsc --noEmit",
+    "tsc": "tsc --noEmit",
     "tsc:watch": "npm run tsc -- --watch --preserveWatchOutput"
   },
   "author": "YOU",
   "license": "MIT License",
   "dependencies": {
-    "vue": "^3.2.37"
+    "fast-xml-parser": "^5.2.5",
+    "jszip": "^3.10.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.51.0",
-    "@vitejs/plugin-vue": "^3.1.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
     "concurrently": "^7.4.0",
     "esbuild": "^0.15.7",
     "prettier": "^2.7.1",
     "typescript": "^4.6.4",
     "vite": "^3.1.0",
     "vite-plugin-singlefile": "^0.11.1",
-    "vite-svg-loader": "^3.6.0",
-    "vue-tsc": "^0.40.4"
+    "vite-svg-loader": "^3.6.0"
   }
 }
