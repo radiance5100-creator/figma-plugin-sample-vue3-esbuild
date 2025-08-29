@@ -9,7 +9,9 @@ import JSZip from 'jszip'
 import { PPTXFile, ParseResult, ParserState, Slide, MasterSlide, Theme, MediaFile } from './types'
 import { parseXML, emuToPixels, generateId, logParseStep, logParseError, createParseError } from './utils'
 import { ModelFactories, ModelUtils, Presentation as DomainPresentation } from '../models'
-import { PresentationParser, SlideParser, XMLUtils } from './xml'
+import { PresentationParser, SlideParser, XMLUtils, ThemeParser } from './xml'
+import { ThemeCache } from '../models/ThemeCache'
+import { ElementMapper } from '../mapper/ElementMapper'
 
 export class PPTXParser {
   private state: ParserState = {
@@ -420,5 +422,30 @@ export class PPTXParser {
   // Получение текущего состояния
   getState(): ParserState {
     return { ...this.state }
+  }
+
+  /**
+   * Маппинг слайда в доменные модели
+   */
+  async mapSlide(slideXml: string, slideIndex: number, slideId: string, scale: number = 1.0) {
+    try {
+      const elementMapper = new ElementMapper();
+      const mappingResult = await elementMapper.mapSlide(slideXml, slideIndex, slideId, scale);
+      
+      return {
+        success: true,
+        elements: mappingResult.elements,
+        warnings: mappingResult.warnings,
+        errors: mappingResult.errors
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown mapping error';
+      return {
+        success: false,
+        elements: [],
+        warnings: [],
+        errors: [errorMessage]
+      };
+    }
   }
 }

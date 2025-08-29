@@ -235,30 +235,52 @@ export interface SlideLayout {
   size: Size;
 }
 
+// Типы для цветовой информации
+export interface ColorInfo {
+  type: 'rgb' | 'scheme' | 'system';
+  value: string;
+  tint: number; // 0-1
+  shade: number; // 0-1
+  alpha: number; // 0-1
+}
+
+// Типы для информации о шрифте
+export interface FontInfo {
+  typeface: string;
+  panose: string;
+  pitchFamily: string;
+  charset: string;
+}
+
 // Типы для тем
 export interface ColorScheme {
-  primary: Color;
-  secondary: Color;
-  accent1: Color;
-  accent2: Color;
-  accent3: Color;
-  accent4: Color;
-  accent5: Color;
-  accent6: Color;
-  hyperlink: Color;
-  followedHyperlink: Color;
+  id: string;
+  name: string;
+  colors: { [key: string]: ColorInfo };
+  metadata: {
+    created: string;
+    version: string;
+  };
 }
 
 export interface FontScheme {
-  major: {
-    latin: string;
-    eastAsian: string;
-    complex: string;
+  id: string;
+  name: string;
+  fonts: {
+    majorFont: {
+      latin: FontInfo;
+      eastAsian: FontInfo;
+      complexScript: FontInfo;
+    };
+    minorFont: {
+      latin: FontInfo;
+      eastAsian: FontInfo;
+      complexScript: FontInfo;
+    };
   };
-  minor: {
-    latin: string;
-    eastAsian: string;
-    complex: string;
+  metadata: {
+    created: string;
+    version: string;
   };
 }
 
@@ -266,8 +288,13 @@ export interface Theme {
   id: string;
   name: string;
   number: number;
-  colorScheme: ColorScheme;
-  fontScheme: FontScheme;
+  colors: ColorScheme;
+  fonts: FontScheme;
+  metadata: {
+    created: string;
+    modified: string;
+    version: string;
+  };
 }
 
 // Типы для медиа файлов

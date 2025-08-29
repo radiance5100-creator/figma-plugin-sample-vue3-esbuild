@@ -13,73 +13,45 @@ export interface ThemeCacheEntry {
   fontScheme: FontScheme
   lastAccessed: number
   accessCount: number
-  size: number
-}
-
-export interface ThemeCacheStats {
-  totalEntries: number
-  totalSize: number
-  hitRate: number
-  missRate: number
-  averageAccessTime: number
 }
 
 export class ThemeCache {
-  private cache = new Map<string, ThemeCacheEntry>()
-  private maxSize: number
-  private maxEntries: number
-  private stats = {
-    hits: 0,
-    misses: 0,
-    totalAccessTime: 0,
-    accessCount: 0
-  }
+  private cache: Map<string, ThemeCacheEntry> = new Map()
+  private maxSize: number = 10 // Максимальное количество тем в кэше
+  private defaultTheme: Theme | null = null
 
-  constructor(maxSize: number = 10 * 1024 * 1024, maxEntries: number = 100) {
+  constructor(maxSize: number = 10) {
     this.maxSize = maxSize
-    this.maxEntries = maxEntries
   }
 
   // Добавление темы в кэш
   set(themeId: string, theme: Theme, colorScheme: ColorScheme, fontScheme: FontScheme): void {
+    // Если кэш переполнен, удаляем наименее используемую тему
+    if (this.cache.size >= this.maxSize) {
+      this.evictLeastUsed()
+    }
+
     const entry: ThemeCacheEntry = {
       theme,
       colorScheme,
       fontScheme,
       lastAccessed: Date.now(),
-      accessCount: 0,
-      size: this.calculateEntrySize(theme, colorScheme, fontScheme)
+      accessCount: 0
     }
-
-    // Проверка лимитов кэша
-    this.ensureCacheLimits(entry.size)
 
     this.cache.set(themeId, entry)
   }
 
   // Получение темы из кэша
-  get(themeId: string): { theme: Theme; colorScheme: ColorScheme; fontScheme: FontScheme } | null {
-    const startTime = Date.now()
+  get(themeId: string): ThemeCacheEntry | null {
     const entry = this.cache.get(themeId)
-
+    
     if (entry) {
-      // Обновление статистики доступа
+      // Обновляем статистику использования
       entry.lastAccessed = Date.now()
       entry.accessCount++
-      this.stats.hits++
-      this.stats.totalAccessTime += Date.now() - startTime
-      this.stats.accessCount++
-
-      return {
-        theme: entry.theme,
-        colorScheme: entry.colorScheme,
-        fontScheme: entry.fontScheme
-      }
+      return entry
     }
-
-    this.stats.misses++
-    this.stats.totalAccessTime += Date.now() - startTime
-    this.stats.accessCount++
 
     return null
   }
@@ -97,189 +69,201 @@ export class ThemeCache {
   // Очистка всего кэша
   clear(): void {
     this.cache.clear()
-    this.resetStats()
   }
 
-  // Получение статистики кэша
-  getStats(): ThemeCacheStats {
-    const totalEntries = this.cache.size
-    const totalSize = Array.from(this.cache.values()).reduce((sum, entry) => sum + entry.size, 0)
-    const hitRate = this.stats.accessCount > 0 ? this.stats.hits / this.stats.accessCount : 0
-    const missRate = this.stats.accessCount > 0 ? this.stats.misses / this.stats.accessCount : 0
-    const averageAccessTime = this.stats.accessCount > 0 ? this.stats.totalAccessTime / this.stats.accessCount : 0
+  // Получение размера кэша
+  size(): number {
+    return this.cache.size
+  }
 
-    return {
-      totalEntries,
-      totalSize,
-      hitRate,
-      missRate,
-      averageAccessTime
+  // Установка темы по умолчанию
+  setDefaultTheme(theme: Theme): void {
+    this.defaultTheme = theme
+  }
+
+  // Получение темы по умолчанию
+  getDefaultTheme(): Theme | null {
+    return this.defaultTheme
+  }
+
+  // Получение цвета из цветовой схемы с учетом tint/shade
+  getColor(colorScheme: ColorScheme, colorKey: string, tint?: number, shade?: number, alpha?: number): string {
+    const colorInfo = colorScheme.colors[colorKey]
+    
+    if (!colorInfo) {
+      return '#000000' // Цвет по умолчанию
+    }
+
+    let color = this.parseColorValue(colorInfo)
+    
+    // Применяем tint (осветление)
+    if (tint !== undefined && tint > 0) {
+      color = this.applyTint(color, tint)
+    } else if (colorInfo.tint > 0) {
+      color = this.applyTint(color, colorInfo.tint)
+    }
+
+    // Применяем shade (затемнение)
+    if (shade !== undefined && shade > 0) {
+      color = this.applyShade(color, shade)
+    } else if (colorInfo.shade > 0) {
+      color = this.applyShade(color, colorInfo.shade)
+    }
+
+    // Применяем alpha (прозрачность)
+    const finalAlpha = alpha !== undefined ? alpha : colorInfo.alpha
+    if (finalAlpha < 1) {
+      color = this.applyAlpha(color, finalAlpha)
+    }
+
+    return color
+  }
+
+  // Парсинг значения цвета
+  private parseColorValue(colorInfo: ColorInfo): string {
+    switch (colorInfo.type) {
+      case 'rgb':
+        return `#${colorInfo.value}`
+      case 'scheme':
+        // Для scheme цветов возвращаем базовый цвет
+        return this.getSchemeColor(colorInfo.value)
+      case 'system':
+        // Для системных цветов возвращаем базовый цвет
+        return this.getSystemColor(colorInfo.value)
+      default:
+        return '#000000'
     }
   }
 
-  // Получение списка всех тем в кэше
-  getAllThemes(): Theme[] {
-    return Array.from(this.cache.values()).map(entry => entry.theme)
-  }
-
-  // Поиск тем по имени
-  findThemesByName(name: string): Theme[] {
-    return Array.from(this.cache.values())
-      .filter(entry => entry.theme.name.toLowerCase().includes(name.toLowerCase()))
-      .map(entry => entry.theme)
-  }
-
-  // Получение цветовой схемы по ID темы
-  getColorScheme(themeId: string): ColorScheme | null {
-    const entry = this.cache.get(themeId)
-    return entry ? entry.colorScheme : null
-  }
-
-  // Получение схемы шрифтов по ID темы
-  getFontScheme(themeId: string): FontScheme | null {
-    const entry = this.cache.get(themeId)
-    return entry ? entry.fontScheme : null
-  }
-
-  // Получение цвета из схемы по ключу
-  getColorFromScheme(themeId: string, colorKey: string): ColorInfo | null {
-    const colorScheme = this.getColorScheme(themeId)
-    return colorScheme ? colorScheme.colors[colorKey] || null : null
-  }
-
-  // Применение tint/shade к цвету
-  applyTintShade(color: ColorInfo, tint: number = 0, shade: number = 0): ColorInfo {
-    if (color.type !== 'rgb') return color
-
-    let rgbValue = color.value
-    let r = parseInt(rgbValue.substr(0, 2), 16) / 255
-    let g = parseInt(rgbValue.substr(2, 2), 16) / 255
-    let b = parseInt(rgbValue.substr(4, 2), 16) / 255
-
-    // Применение tint (осветление)
-    if (tint > 0) {
-      r = r + (1 - r) * tint
-      g = g + (1 - g) * tint
-      b = b + (1 - b) * tint
+  // Получение цвета схемы
+  private getSchemeColor(schemeKey: string): string {
+    // Стандартные цвета схемы
+    const schemeColors: { [key: string]: string } = {
+      'dk1': '#000000', // Темный 1
+      'lt1': '#FFFFFF', // Светлый 1
+      'dk2': '#44546A', // Темный 2
+      'lt2': '#E7E6E6', // Светлый 2
+      'accent1': '#5B9BD5', // Акцент 1
+      'accent2': '#ED7D31', // Акцент 2
+      'accent3': '#A5A5A5', // Акцент 3
+      'accent4': '#FFC000', // Акцент 4
+      'accent5': '#4472C4', // Акцент 5
+      'accent6': '#70AD47', // Акцент 6
+      'hlink': '#0563C1', // Гиперссылка
+      'folHlink': '#954F72' // Посещенная гиперссылка
     }
 
-    // Применение shade (затемнение)
-    if (shade > 0) {
-      r = r * (1 - shade)
-      g = g * (1 - shade)
-      b = b * (1 - shade)
-    }
-
-    // Ограничение значений
-    r = Math.max(0, Math.min(1, r))
-    g = Math.max(0, Math.min(1, g))
-    b = Math.max(0, Math.min(1, b))
-
-    const newRgbValue = 
-      Math.round(r * 255).toString(16).padStart(2, '0') +
-      Math.round(g * 255).toString(16).padStart(2, '0') +
-      Math.round(b * 255).toString(16).padStart(2, '0')
-
-    return {
-      ...color,
-      value: newRgbValue,
-      tint: color.tint + tint,
-      shade: color.shade + shade
-    }
+    return schemeColors[schemeKey] || '#000000'
   }
 
-  // Конвертация цвета в формат Figma
-  convertToFigmaColor(color: ColorInfo): { r: number; g: number; b: number; a?: number } {
-    if (color.type === 'rgb') {
-      const r = parseInt(color.value.substr(0, 2), 16) / 255
-      const g = parseInt(color.value.substr(2, 2), 16) / 255
-      const b = parseInt(color.value.substr(4, 2), 16) / 255
+  // Получение системного цвета
+  private getSystemColor(systemKey: string): string {
+    // Системные цвета
+    const systemColors: { [key: string]: string } = {
+      'window': '#FFFFFF', // Цвет окна
+      'windowText': '#000000', // Цвет текста окна
+      'menu': '#F0F0F0', // Цвет меню
+      'menuText': '#000000', // Цвет текста меню
+      'buttonFace': '#E1E1E1', // Цвет кнопки
+      'buttonText': '#000000', // Цвет текста кнопки
+      'highlight': '#0078D4', // Цвет выделения
+      'highlightText': '#FFFFFF' // Цвет текста выделения
+    }
 
-      return {
-        r,
-        g,
-        b,
-        a: color.alpha
+    return systemColors[systemKey] || '#000000'
+  }
+
+  // Применение tint (осветление)
+  private applyTint(color: string, tint: number): string {
+    const rgb = this.hexToRgb(color)
+    if (!rgb) return color
+
+    const tinted = {
+      r: Math.round(rgb.r + (255 - rgb.r) * tint),
+      g: Math.round(rgb.g + (255 - rgb.g) * tint),
+      b: Math.round(rgb.b + (255 - rgb.b) * tint)
+    }
+
+    return this.rgbToHex(tinted.r, tinted.g, tinted.b)
+  }
+
+  // Применение shade (затемнение)
+  private applyShade(color: string, shade: number): string {
+    const rgb = this.hexToRgb(color)
+    if (!rgb) return color
+
+    const shaded = {
+      r: Math.round(rgb.r * (1 - shade)),
+      g: Math.round(rgb.g * (1 - shade)),
+      b: Math.round(rgb.b * (1 - shade))
+    }
+
+    return this.rgbToHex(shaded.r, shaded.g, shaded.b)
+  }
+
+  // Применение alpha (прозрачность)
+  private applyAlpha(color: string, alpha: number): string {
+    const rgb = this.hexToRgb(color)
+    if (!rgb) return color
+
+    const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, '0')
+    return `${color}${alphaHex}`
+  }
+
+  // Конвертация hex в RGB
+  private hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null
+  }
+
+  // Конвертация RGB в hex
+  private rgbToHex(r: number, g: number, b: number): string {
+    const toHex = (c: number) => {
+      const hex = Math.max(0, Math.min(255, c)).toString(16)
+      return hex.length === 1 ? '0' + hex : hex
+    }
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+  }
+
+  // Удаление наименее используемой темы
+  private evictLeastUsed(): void {
+    let leastUsed: string | null = null
+    let minScore = Infinity
+
+    for (const [themeId, entry] of this.cache.entries()) {
+      // Простая формула для оценки важности: количество обращений * время последнего обращения
+      const score = entry.accessCount * (Date.now() - entry.lastAccessed)
+      
+      if (score < minScore) {
+        minScore = score
+        leastUsed = themeId
       }
     }
 
-    // Для scheme и system цветов возвращаем дефолтный черный
-    return { r: 0, g: 0, b: 0, a: color.alpha }
-  }
-
-  // Обеспечение лимитов кэша
-  private ensureCacheLimits(newEntrySize: number): void {
-    const currentSize = Array.from(this.cache.values()).reduce((sum, entry) => sum + entry.size, 0)
-    const currentEntries = this.cache.size
-
-    // Если превышен лимит размера или количества записей
-    if (currentSize + newEntrySize > this.maxSize || currentEntries >= this.maxEntries) {
-      this.evictLeastUsed()
+    if (leastUsed) {
+      this.cache.delete(leastUsed)
     }
   }
 
-  // Удаление наименее используемых записей
-  private evictLeastUsed(): void {
+  // Получение статистики кэша
+  getStats(): {
+    size: number
+    maxSize: number
+    hitRate: number
+    mostUsed: string[]
+  } {
     const entries = Array.from(this.cache.entries())
+    const sortedByUsage = entries.sort((a, b) => b[1].accessCount - a[1].accessCount)
     
-    // Сортировка по времени последнего доступа и количеству обращений
-    entries.sort((a, b) => {
-      const scoreA = a[1].lastAccessed + (a[1].accessCount * 1000)
-      const scoreB = b[1].lastAccessed + (b[1].accessCount * 1000)
-      return scoreA - scoreB
-    })
-
-    // Удаление 20% наименее используемых записей
-    const toRemove = Math.ceil(entries.length * 0.2)
-    for (let i = 0; i < toRemove; i++) {
-      this.cache.delete(entries[i][0])
-    }
-  }
-
-  // Расчет размера записи в кэше
-  private calculateEntrySize(theme: Theme, colorScheme: ColorScheme, fontScheme: FontScheme): number {
-    // Простая оценка размера в байтах
-    let size = 0
-
-    // Размер темы
-    size += JSON.stringify(theme).length
-
-    // Размер цветовой схемы
-    size += JSON.stringify(colorScheme).length
-
-    // Размер схемы шрифтов
-    size += JSON.stringify(fontScheme).length
-
-    return size
-  }
-
-  // Сброс статистики
-  private resetStats(): void {
-    this.stats = {
-      hits: 0,
-      misses: 0,
-      totalAccessTime: 0,
-      accessCount: 0
-    }
-  }
-
-  // Получение информации о кэше для отладки
-  getDebugInfo(): any {
     return {
-      cacheSize: this.cache.size,
+      size: this.cache.size,
       maxSize: this.maxSize,
-      maxEntries: this.maxEntries,
-      stats: this.getStats(),
-      entries: Array.from(this.cache.entries()).map(([id, entry]) => ({
-        id,
-        name: entry.theme.name,
-        lastAccessed: new Date(entry.lastAccessed).toISOString(),
-        accessCount: entry.accessCount,
-        size: entry.size
-      }))
+      hitRate: 0, // TODO: Реализовать подсчет hit rate
+      mostUsed: sortedByUsage.slice(0, 5).map(([id]) => id)
     }
   }
 }
-
-// Глобальный экземпляр кэша тем
-export const globalThemeCache = new ThemeCache()

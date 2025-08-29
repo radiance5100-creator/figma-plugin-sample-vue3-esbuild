@@ -14,6 +14,7 @@ export interface ThemeParseResult {
   fontScheme: FontScheme
   errors: string[]
   warnings: string[]
+  parseTime: number
 }
 
 export class ThemeParser extends XMLParser {
@@ -31,7 +32,7 @@ export class ThemeParser extends XMLParser {
     const warnings: string[] = []
 
     try {
-      const xmlData = this.parseXML(xmlContent)
+      const xmlData = this.parse(xmlContent)
       
       if (!xmlData || !xmlData['a:theme']) {
         throw new Error('Invalid theme XML structure')

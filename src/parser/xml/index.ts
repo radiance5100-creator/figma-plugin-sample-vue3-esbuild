@@ -5,12 +5,22 @@
  * @created: 2024-12-19
  */
 
+import { XMLParser } from './XMLParser'
+import { PresentationParser } from './PresentationParser'
+import { SlideParser } from './SlideParser'
+import { ThemeParser } from './ThemeParser'
+
 // Экспорт базового XML парсера
-export { XMLParser, XMLParseOptions } from './XMLParser'
+export { XMLParser } from './XMLParser'
+export type { XMLParseOptions } from './XMLParser'
 
 // Экспорт парсеров для конкретных файлов
-export { PresentationParser, PresentationInfo } from './PresentationParser'
-export { SlideParser, SlideData } from './SlideParser'
+export { PresentationParser } from './PresentationParser'
+export type { PresentationInfo } from './PresentationParser'
+export { SlideParser } from './SlideParser'
+export type { SlideData } from './SlideParser'
+export { ThemeParser } from './ThemeParser'
+export type { ThemeParseResult } from './ThemeParser'
 
 // Экспорт утилит для работы с XML
 export const XMLUtils = {
@@ -83,17 +93,17 @@ export class ParserFactory {
 
   // Создание парсера для presentation.xml
   static createPresentationParser(): any {
-    return new (require('./PresentationParser').PresentationParser)()
+    return new PresentationParser()
   }
 
   // Создание парсера для slide*.xml
   static createSlideParser(): any {
-    return new (require('./SlideParser').SlideParser)()
+    return new SlideParser()
   }
 
   // Создание базового XML парсера
   static createXMLParser(options?: any): any {
-    return new (require('./XMLParser').XMLParser)(options)
+    return new XMLParser(options)
   }
 }
 
